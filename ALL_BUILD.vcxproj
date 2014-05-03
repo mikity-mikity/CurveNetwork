@@ -53,15 +53,16 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />  </ImportGroup>
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-    <PropertyGroup>
-      <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-      <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-      <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-      <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-      <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
-    </PropertyGroup>
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Midl>
       <AdditionalIncludeDirectories>C:\CGAL-4.4\examples\Triangulation_3\..\..\include;C:\CGAL-4.4\auxiliary\gmp\include;C:\CGAL-4.4\examples\Triangulation_3;C:\CGAL-4.4\include;C:\local\boost_1_55_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -210,9 +211,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <None Include="CMakeFiles\ALL_BUILD" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/ZERO_CHECK.vcxproj">
-      <Project>B9944EA7-6C24-494C-9572-54E79E4B8F6A</Project>
-    </ProjectReference>
     <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/adding_handles_3.vcxproj">
       <Project>08FE8BB2-2181-4425-AB23-09943F44A3C6</Project>
     </ProjectReference>
@@ -227,33 +225,6 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </ProjectReference>
     <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/find_conflicts_3.vcxproj">
       <Project>11C3F538-35E0-48DB-91C2-6107A2B51FFF</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/info_insert_with_pair_iterator.vcxproj">
-      <Project>12A56471-A923-4913-9701-B652B27C9F13</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/info_insert_with_pair_iterator_regular.vcxproj">
-      <Project>306F36F1-DB45-4AA4-A945-1E6207D46D6F</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/info_insert_with_transform_iterator.vcxproj">
-      <Project>F5356420-9BEB-436C-9A0B-0D97761C362F</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/info_insert_with_zip_iterator.vcxproj">
-      <Project>31F454ED-5335-46E0-AE3F-12EEE6DFC9BA</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/linking_2d_and_3d.vcxproj">
-      <Project>A82096D9-FC8D-41CF-B0E5-004D4818BF51</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/regular_3.vcxproj">
-      <Project>CC2F914D-0644-4C7B-9FF7-A4D8303D9224</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/simple_triangulation_3.vcxproj">
-      <Project>AB55F3B2-98AC-4475-904D-A6C0511DF52C</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/simplex.vcxproj">
-      <Project>AD7A5752-CD36-4478-AF32-A1E837DF529A</Project>
-    </ProjectReference>
-    <ProjectReference Include="C:/CGAL-4.4/examples/Triangulation_3/tds.vcxproj">
-      <Project>83E3675D-5BF9-4BCD-A518-77CFE4589AB0</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
