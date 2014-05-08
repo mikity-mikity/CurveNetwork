@@ -27,7 +27,7 @@ typedef Delaunay::Locate_type    Locate_type;
 using namespace std;
 int main()
 {
-	string NAME="cube";
+	string NAME="test";
 	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
@@ -304,7 +304,7 @@ int main()
 			std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
 			if(it_N==index.end())
 			{
-				if(cells[it_c->second]>=V*D)
+				//if(cells[it_c->second]>=V*D)
 					facet_list.push_back(Delaunay::Facet(itr,i));
 			}else
 			{
