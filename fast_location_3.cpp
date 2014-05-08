@@ -27,7 +27,7 @@ typedef Delaunay::Locate_type    Locate_type;
 using namespace std;
 int main()
 {
-	string NAME="heart";
+	string NAME="cube";
 	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
@@ -73,7 +73,7 @@ int main()
 
 	//Generating points along branches.
 	std::vector<Point> exterior;
-	std::vector<Point> interior;
+	std::vector<std::pair<Point,double>> interior;
 	int C=0;
 	int num=0;
 	double pi=boost::math::constants::pi<double>();
@@ -150,13 +150,14 @@ int main()
 	itrA=data.begin();
 	itrB=planeTree.begin();
 	std::cout<<"construct interior"<<endl;
+	N=0;
 	while(itrA!=data.end())
 	{
 		double Radius;
 		br* _branch;
 		planes* _planes=*itrB;
 		boost::tie(Radius,_branch)=*itrA;
-		exterior.push_back(*(_branch->begin()));
+		double dx=Radius/5.;
 		br::iterator itrC=_branch->begin();
 		planes::iterator itrD=_planes->begin();
 		while(itrC!=_branch->end()-1)
@@ -165,7 +166,17 @@ int main()
 			Vector V2=*(itrD+1);
 			Point P1=*itrC;
 			Point P2=*(itrC+1);
-			for(double s=0.1;s<1.0;s+=0.2)
+			//•ªŠ„”Œˆ‚ß‚é
+			double L=std::sqrt((P1-P2).squared_length());
+			double DX=0.2;
+			if(L<dx*5)
+			{
+				DX=0.2;
+			}else
+			{
+				DX=dx/L;
+			}
+			for(double s=0.1;s<1.0;s+=DX)
 			{
 				Vector V=V1*s+V2*(1.-s);
 				Vector Z=Vector(0,0,1);
@@ -185,7 +196,7 @@ int main()
 					{
 						if(u*u+v*v<=1)
 						{
-							interior.push_back(P+Radius*W*u+Radius*T*v);
+							interior.push_back(std::make_pair(P+Radius*W*u+Radius*T*v,DX*L*0.2*Radius*0.2*Radius));
 						}
 					}
 				}
@@ -195,6 +206,7 @@ int main()
 		}
 		itrA++;
 		itrB++;
+		N++;
 	}
 	
 	// building their Delaunay tria*/ngulation.
@@ -220,33 +232,46 @@ int main()
 	Locate_type lt;
 	int li, lj;
 	N=0;
-	std::map<Delaunay::Cell_iterator,int> index;
+	std::map<Delaunay::Cell_handle,int> index;
+	std::map<Delaunay::Cell_handle,double> volume;
 	std::cout<<"start cell search"<<endl;
 
-	for(Delaunay::Cell_iterator itr=T.cells_begin();itr!=T.cells_end();itr++,N++)
+	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
-		index.insert(pair<const Delaunay::Cell_iterator,int>(itr,N));
+		index.insert(pair<const Delaunay::Finite_cells_iterator,int>(itr,N));
+		Point PA=itr->vertex(0)->point();
+		Point PB=itr->vertex(1)->point();
+		Point PC=itr->vertex(2)->point();
+		Point PD=itr->vertex(3)->point();
+		Vector G=PD-PA;
+		Vector H=PD-PB;
+		Vector I=PD-PC;
+		double V=std::fabs(CGAL::cross_product(G,H)*I)/6.;
+		volume.insert(pair<const Delaunay::Finite_cells_iterator,double>(itr,V));
 	}
 	Cell_handle before=Cell_handle();
 	Cell_handle c=Cell_handle();
 	N=0;
 	NN=(interior.size()/20);
-	std::vector<int> cells;
+	std::vector<double> cells;
 
 	for(int i=0;i<T.number_of_cells();i++)
 	{
 		cells.push_back(0);
 	}
-	for(vector<Point>::iterator itr=interior.begin();itr!=interior.end();itr++,N++)
+	for(vector<std::pair<Point,double>>::iterator itr=interior.begin();itr!=interior.end();itr++,N++)
 	{
 		if(N==0)
-			c = T.locate(*itr, lt,li,lj);
+			c = T.locate(itr->first, lt,li,lj);
 		else
-			c=T.locate(*itr,lt,li,lj,before);
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c=index.find(c);
-		int d=it_c->second;
-		cells[d]++;
-		before=c;
+			c=T.locate(itr->first,lt,li,lj,before);
+		std::map<Delaunay::Cell_handle,int>::iterator it_c=index.find(c);
+		if(c>=T.finite_cells_begin()&&c<T.finite_cells_end())
+		{
+			int d=it_c->second;
+			cells[d]+=itr->second;
+			before=c;
+		}
 		if(((int)N/NN)*NN==N)
 		{
 			std::cout<<"*";
@@ -257,62 +282,44 @@ int main()
 	std::cout<<"T.number_of_cells:"<<T.number_of_cells()<<endl;
 	std::cout<<"T.number_of_facets:"<<T.number_of_facets()<<endl;
 
-	int max=*(std::max_element(cells.begin(),cells.end()));
-	for(int i=0;i<=max;i++)
+	//int max=*(std::max_element(cells.begin(),cells.end()));
+	/*for(int i=0;i<=max;i++)
 	{
 		int n=std::count(cells.begin(),cells.end(),i);
 		if(n!=0)
 		std::cout<<i<<":"<<n<<endl;
-	}
+	}*/
 	/*Ž©‘OŽÀ‘•‚É‚·‚é*/
-	NN=T.number_of_facets()/20;
+	NN=T.number_of_finite_facets()/20;
 	N=0;
 	std::vector<Delaunay::Facet> facet_list;
-	/*for(Delaunay::Finite_facets_iterator itr=T.finite_facets_begin();itr!=T.finite_facets_end();itr++,N++)
+	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c1=index.find(itr->first);
-		Delaunay::Cell_handle _cell=itr->first->neighbor(itr->second);
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c2=index.find(_cell);
-		if(it_c2==index.end())
+		std::map<Delaunay::Cell_handle,int>::iterator it_c=index.find(itr);
+		double V=volume.find(itr)->second;
+		double D=0.5;
+		for(int i=0;i<4;i++)
 		{
-			facet_list.push_back(*itr);
-			std::cout<<"boundary"<<endl;
-		}else
-		{
-			int d1=it_c1->second;
-			int d2=it_c2->second;
-			//if(cells[d1]==0&&cells[d2]<1)
-			//{
-				facet_list.push_back(*itr);
-			//}
+			Delaunay::Cell_handle _neighbor=itr->neighbor(i);
+			std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
+			if(it_N==index.end())
+			{
+				if(cells[it_c->second]>=V*D)
+					facet_list.push_back(Delaunay::Facet(itr,i));
+			}else
+			{
+				/*double V2=volume.find(_neighbor)->second;
+				if(cells[it_c->second]>=V*D&&cells[it_N->second]<V2*D)
+				{
+					facet_list.push_back(Delaunay::Facet(itr,i));
+				}*/
+			}
 		}
-		if(((int)N/NN)*NN==N)std::cout<<"*";
-	}*/
-	for(Delaunay::Cell_iterator itr=T.cells_begin();itr!=T.cells_end();itr++,N++)
-	{
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c=index.find(itr);
-		Delaunay::Cell_handle _cell0=itr->neighbor(0);
-		Delaunay::Cell_handle _cell1=itr->neighbor(1);
-		Delaunay::Cell_handle _cell2=itr->neighbor(2);
-		Delaunay::Cell_handle _cell3=itr->neighbor(3);
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c0=index.find(_cell0);
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c1=index.find(_cell1);
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c2=index.find(_cell2);
-		std::map<Delaunay::Cell_iterator,int>::iterator it_c3=index.find(_cell3);
-		int D=6;
-		if(cells[it_c->second]>=D/*&&cells[it_c0->second]<D*/)
-		facet_list.push_back(Delaunay::Facet(itr,0));
-		if(cells[it_c->second]>=D/*&&cells[it_c1->second]<D*/)
-		facet_list.push_back(Delaunay::Facet(itr,1));
-		if(cells[it_c->second]>=D/*&&cells[it_c2->second]<D*/)
-		facet_list.push_back(Delaunay::Facet(itr,2));
-		if(cells[it_c->second]>=D/*&&cells[it_c3->second]<D*/)
-		facet_list.push_back(Delaunay::Facet(itr,3));
 		if(((int)N/NN)*NN==N)std::cout<<"*";
 	}
 	std::cout<<endl;
 	std::cout<<"complex created"<<endl;
-	std::cout<<"T.number_of_facets:"<<T.number_of_facets()<<endl;
+	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
 
 
 	//File write
@@ -326,9 +333,9 @@ int main()
 	ofstream ofs(filename);
 	ofstream ofs2(filename2);
 	ofstream ofs3(filename3);
-	for(vector<Point>::iterator itr=interior.begin();itr!=interior.end();itr++)
+	for(vector<std::pair<Point,double>>::iterator itr=interior.begin();itr!=interior.end();itr++)
 	{
-		ofs3<<(*itr).x()<<" , "<<(*itr).y()<<" , "<<(*itr).z()<<endl;
+		ofs3<<(itr->first).x()<<" , "<<(itr->first).y()<<" , "<<(itr->first).z()<<endl;
 	}
 	N=0;
 	for(vector<Delaunay::Facet>::iterator itr=facet_list.begin();itr!=facet_list.end();itr++)
@@ -341,11 +348,8 @@ int main()
 				std::map<Delaunay::Vertex_handle,int>::iterator pair=vIndex.find(handle);
 				if(pair==vIndex.end())
 				{
-					Delaunay::Point center=itr->first->circumcenter();
 					Delaunay::Point P=handle->point();
-					Vector V=(P-center)*0.9;
-					Delaunay::Point Q(center.x()+V.x(),center.y()+V.y(),center.z()+V.z());
-					ofs<<Q.x()<<" , "<<Q.y()<<" , "<<Q.z()<<endl;
+					ofs<<P.x()<<" , "<<P.y()<<" , "<<P.z()<<endl;
 					vIndex.insert(std::make_pair(handle,N));
 					ofs2<<N<<" ";
 					N++;
