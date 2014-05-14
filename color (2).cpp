@@ -36,6 +36,11 @@ int main()
 		Delaunay::Cell_handle cell1=itr->neighbor(1);
 		Delaunay::Cell_handle cell2=itr->neighbor(2);
 		Delaunay::Cell_handle cell3=itr->neighbor(3);
+		if(cell0<T.finite_cells_begin())cout<<"error"<<index.find(cell0)->second<<endl;
+		if(cell1<T.finite_cells_begin())cout<<"error"<<index.find(cell1)->second<<endl;
+		if(cell2<T.finite_cells_begin())cout<<"error"<<index.find(cell2)->second<<endl;
+		if(cell3<T.finite_cells_begin())cout<<"error"<<index.find(cell3)->second<<endl;
+		std::cout<<index.find(cell0)->second<<","<<index.find(cell1)->second<<","<<index.find(cell2)->second<<","<<index.find(cell3)->second<<endl;
 	}
 	// Set the color of finite vertices of degree 6 to red.
 	std::cout<<"T.number_of_vertices"<<T.number_of_vertices()<<endl;
