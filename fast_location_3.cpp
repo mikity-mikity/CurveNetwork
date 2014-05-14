@@ -34,7 +34,7 @@ using namespace std;
 int main()
 {
 	double pi=boost::math::constants::pi<double>();
-	string NAME="test";
+	string NAME="heart";
 	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
