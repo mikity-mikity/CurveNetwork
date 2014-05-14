@@ -34,7 +34,7 @@ using namespace std;
 int main()
 {
 	double pi=boost::math::constants::pi<double>();
-	string NAME="heart";
+	string NAME="test";
 	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
@@ -557,19 +557,19 @@ int main()
 	std::map<Delaunay::Vertex_handle,int> vIndex;
 	filename="c:/out/"+NAME+".out";
 	string filename2="c:/out/"+NAME+"_S.out";
-	string filename3="c:/out/"+NAME+"_F.out";
+	//string filename3="c:/out/"+NAME+"_F.out";
 	//string filename4="c:/out/"+NAME+"_D.out";
 	std::cout<<"start writing file"<<"["<<filename<<"]"<<endl;
 	ofstream ofs(filename);
 	ofstream ofs2(filename2);
-	ofstream ofs3(filename3);
+	//ofstream ofs3(filename3);
 	/*ofstream ofs4(filename4);
 	for(list<std::pair<Point,double>>::iterator itr=interior.begin();itr!=interior.end();itr++)
 	{
 		ofs4<<(itr->first).x()<<" , "<<(itr->first).y()<<" , "<<(itr->first).z()<<endl;
 	}*/
 	N=0;
-	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
+	/*for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
 		Point PA=itr->vertex(0)->point();
 		Point PB=itr->vertex(1)->point();
@@ -580,7 +580,7 @@ int main()
 		double z=(PA.z()+PB.z()+PC.z()+PD.z())/4.;
 		Point center(x,y,z);
 		ofs3<<center.x()<<" , "<<center.y()<<" , "<<center.z()<<" , "<<density[N]<<endl;
-	}
+	}*/
 	N=0;
 	for(vector<Delaunay::Facet>::iterator itr=facet_list.begin();itr!=facet_list.end();itr++)
 	{
@@ -607,7 +607,7 @@ int main()
 	}
 	ofs.close();
 	ofs2.close();
-	ofs3.close();
+	//ofs3.close();
 	//ofs4.close();
 	
 	
