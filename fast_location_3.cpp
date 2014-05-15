@@ -35,7 +35,7 @@ using namespace std;
 int main()
 {
 	double pi=boost::math::constants::pi<double>();
-	string NAME="test2";
+	string NAME="heart2";
 	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
@@ -461,6 +461,10 @@ int main()
 		itrB++;
 	}
 	std::cout<<"interior.size():"<<N<<endl;
+	
+	string filename4="c:/out/"+NAME+"_D.out";
+	ofstream ofs4(filename4);
+	
 	int size=N;
 	int next=1000000;
 	N=0;
@@ -596,7 +600,8 @@ int main()
 						c = T.locate(D, lt,li,lj);
 					else
 						c=T.locate(D,lt,li,lj,before);
-						
+					if(N<150000)ofs4<<(D).x()<<" , "<<(D).y()<<" , "<<(D).z()<<endl;
+
 					if(lt==Locate_type::CELL)
 					{
 							std::map<Delaunay::Cell_handle,int>::iterator it_c=index.find(c);
@@ -624,7 +629,7 @@ int main()
 	
 	
 	N=0;
-	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
+	/*for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
 		Point PA=itr->vertex(0)->point();
 		Point PB=itr->vertex(1)->point();
@@ -636,7 +641,7 @@ int main()
 		double V=std::fabs(CGAL::cross_product(G,H)*I)/6.;
 		density[N]=V;//cells[N]/V;
 	}
-	
+	*/
 	std::cout<<"T.number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
 	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
 	bool* bool_list=new bool[T.number_of_finite_cells()];
@@ -648,40 +653,39 @@ int main()
 	{
 		bool_list[N]=true;
 		if(cells[N]<1)bool_list[N]=false;
-		bool_list2[N]=true;
+		//bool_list2[N]=true;
 	}
+	std::cout<<"start refine"<<endl;
+	int TT=0;
 	for(int i=0;i<200;i++)
 	{
+		num=0;
 		N=0;
 		for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 		{
-			if(bool_list2[N]==true)
+			if(bool_list[N]==false)
 			{
-				bool flag=false;
+				int count=0;
 				for(int i=0;i<4;i++)
 				{
 					Delaunay::Cell_handle _neighbor=itr->neighbor(i);
 					std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
-					if(it_N==index.end())
+					if(it_N!=index.end())
 					{
-						flag=true;break;
-					}else
-					{
-						if(bool_list2[N]&&(!bool_list2[it_N->second]))
-						{
-							flag=true;break;
-						}
+						if(bool_list[it_N->second])count++;
 					}
 				}
-				if(flag)
-				{
-					if(bool_list[N]==false)bool_list2[N]=false;
+				if(count>2){
+					bool_list[N]=true;
+					num++;
 				}
 			}
 		}
-		std::cout<<"*";
+		TT++;
+		std::cout<<"refine:"<<TT<<", corrected:"<<num<<endl;
+		if(num==0)break;
 	}
-	std::cout<<endl;
+
 	N=0;
 
 
@@ -689,6 +693,7 @@ int main()
 	if(NN<1)NN=1;
 	N=0;
 	std::vector<Delaunay::Facet> facet_list;
+	std::cout<<"count up boundary facets"<<endl;
 	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
 		for(int i=0;i<4;i++)
@@ -697,11 +702,11 @@ int main()
 			std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
 			if(it_N==index.end())
 			{
-				if(bool_list2[N])
+				if(bool_list[N])
 					facet_list.push_back(Delaunay::Facet(itr,i));
 			}else
 			{
-				if(bool_list2[N]&&(!bool_list2[it_N->second]))
+				if(bool_list[N]&&(!bool_list[it_N->second]))
 				{
 					//if(density[it_N->second]>0.00001)
 					facet_list.push_back(Delaunay::Facet(itr,i));
@@ -723,16 +728,11 @@ int main()
 	filename="c:/out/"+NAME+".out";
 	string filename2="c:/out/"+NAME+"_S.out";
 	//string filename3="c:/out/"+NAME+"_F.out";
-	//string filename4="c:/out/"+NAME+"_D.out";
 	std::cout<<"start writing file"<<"["<<filename<<"]"<<endl;
 	ofstream ofs(filename);
 	ofstream ofs2(filename2);
 	//ofstream ofs3(filename3);
-	/*ofstream ofs4(filename4);
-	for(list<std::pair<Point,double>>::iterator itr=interior.begin();itr!=interior.end();itr++)
-	{
-		ofs4<<(itr->first).x()<<" , "<<(itr->first).y()<<" , "<<(itr->first).z()<<endl;
-	}*/
+	
 	N=0;
 	/*for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
@@ -747,7 +747,10 @@ int main()
 		ofs3<<center.x()<<" , "<<center.y()<<" , "<<center.z()<<" , "<<density[N]<<endl;
 	}*/
 	N=0;
-	for(vector<Delaunay::Facet>::iterator itr=facet_list.begin();itr!=facet_list.end();itr++)
+	num=0;
+	NN=facet_list.size()/20;
+	if(NN==0)NN=1;
+	for(vector<Delaunay::Facet>::iterator itr=facet_list.begin();itr!=facet_list.end();itr++,num++)
 	{
 		for(int i=0;i<4;i++)
 		{
@@ -768,12 +771,14 @@ int main()
 				}
 			}
 		}
+		if(((int)num/NN)*NN==num)std::cout<<"*";
 		ofs2<<endl;
 	}
+	std::cout<<endl;
 	ofs.close();
 	ofs2.close();
 	//ofs3.close();
-	//ofs4.close();
+	ofs4.close();
 	
 	
 	std::cout << "Press Return To Exit...";
