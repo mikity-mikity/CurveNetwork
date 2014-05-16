@@ -15,7 +15,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 //typedef CGAL::Triangulation_3<K>      Delaunay;
 //typedef CGAL::Triangulation_vertex_base_with_info_3<unsigned,K>    Vb;
 //typedef CGAL::Triangulation_data_structure_3<Vb>                    Tds;
-typedef CGAL::Delaunay_triangulation_3<K,CGAL::Fast_location> Delaunay;
+typedef CGAL::Delaunay_triangulation_3<K/*,CGAL::Fast_location*/> Delaunay;
 typedef Delaunay::Point Point;
 typedef CGAL::Vector_3<K> Vector;
 typedef std::vector<Point> br;
@@ -25,7 +25,13 @@ typedef struct
 	Vector minorRadius;
 	Vector Normal;
 }eclipse;
-
+struct face
+{
+	int A,B,C;
+	bool operator==( const face& right ) const {
+      return A == right.A&&B==right.B&&C==right.C ? true : false;
+    }
+};
 typedef std::vector<eclipse> eclipses;
 typedef boost::tuple<double,br*> R_br;
 typedef Delaunay::Cell_handle Cell_handle;
@@ -35,7 +41,7 @@ using namespace std;
 int main()
 {
 	double pi=boost::math::constants::pi<double>();
-	string NAME="heart2";
+	string NAME="heart";
 	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
@@ -262,13 +268,15 @@ int main()
 				beforeY=CGAL::cross_product(V,beforeX);
 
 			}
-			for(int ss=0;ss<=DIV;ss++)
+			int DIV2=DIV;
+			if(itrC==_branch->end()-2)DIV2=DIV+1;
+			for(int ss=0;ss<DIV2;ss++)
 			{
 				double s=((double)ss)/((double)DIV);
 				exterior.push_back(Point((*itrC).x()*(1-s)+(*(itrC+1)).x()*s,(*itrC).y()*(1-s)+(*(itrC+1)).y()*s,(*itrC).z()*(1-s)+(*(itrC+1)).z()*s));
 				for(int i=0;i<RDIV;i++)
 				{
-					double theta=(double)i/RDIV*2.*pi;
+					double theta=(double)(i)/RDIV*2.*pi;
 
 					Vector BI=0.8*Radius*(beforeX*std::cos(theta)+beforeY*std::sin(theta));
 					Vector BE=1.05*Radius*(beforeX*std::cos(theta)+beforeY*std::sin(theta));
@@ -304,7 +312,6 @@ int main()
 			itrC++;
 			itrD++;
 		}
-		//exterior.push_back(*(_branch->end()-1));
 
 		itrA++;
 		itrB++;
@@ -335,20 +342,17 @@ int main()
 	std::cout<<"isValid"<<T.is_valid()<<endl;
 	std::cout<<"T.number_of_vertices:"<<T.number_of_vertices()<<endl;
 	std::cout<<"number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
-	N=0;
 	std::map<Delaunay::Cell_handle,int> index;
-	//std::map<Delaunay::Cell_handle,double> volume;
 
 	int* cells=new int[T.number_of_finite_cells()];
-	//double* volume=new double[T.number_of_finite_cells()];
-	double* density=new double[T.number_of_finite_cells()];
-	//std::map<Delaunay::Cell_handle,double> density;
 	std::cout<<"start cell search"<<endl;
 	std::cout<<"create index"<<endl;
 
-	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
+	N=0;
+	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++)
 	{
 		index.insert(pair<const Delaunay::Finite_cells_iterator,int>(itr,N));
+		N++;
 	}
 
 	
@@ -357,13 +361,10 @@ int main()
 	std::cout<<"initialize cells"<<endl;
 	int S=T.number_of_finite_cells();
 	int* ptr1=cells;
-	double* ptr2=density;
 	for(int i=0;i<S;i++)
 	{
 		*ptr1=0;
-		*ptr2=0;
 		ptr1++;
-		ptr2++;
 	}
 	Locate_type lt;
 	int li, lj;
@@ -399,7 +400,7 @@ int main()
 		vector<Point> particles;
 		double alpha=pi/((double)RDIV);
 		double R2=Radius*std::cos(alpha);
-		for (int i=0;i<RDIV;i++)
+		for (double i=0.5;i<RDIV;i++)
 		{
 			double theta=2.*pi*((double)i)/((double)RDIV);
 			Vector vector(R2*std::cos(theta),R2*std::sin(theta),0);
@@ -493,9 +494,10 @@ int main()
 		//Generate base particles
 		vector<Vector> vectors;
 		vector<Point> particles;
+
 		double alpha=pi/((double)RDIV);
 		double R2=Radius*std::cos(alpha);
-		for (int i=0;i<RDIV;i++)
+		for (double i=0.5;i<RDIV;i++)
 		{
 			double theta=2.*pi*((double)i)/((double)RDIV);
 			Vector vector(R2*std::cos(theta),R2*std::sin(theta),0);
@@ -528,7 +530,6 @@ int main()
 
 		while(itrC!=_branch->end()-1)
 		{
-			exterior.push_back(*itrC);
 			//Division number along line
 			Point P=*itrC;
 			Point Q=*(itrC+1);
@@ -628,24 +629,11 @@ int main()
 	
 	
 	
-	N=0;
-	/*for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
-	{
-		Point PA=itr->vertex(0)->point();
-		Point PB=itr->vertex(1)->point();
-		Point PC=itr->vertex(2)->point();
-		Point PD=itr->vertex(3)->point();
-		Vector G=PD-PA;
-		Vector H=PD-PB;
-		Vector I=PD-PC;
-		double V=std::fabs(CGAL::cross_product(G,H)*I)/6.;
-		density[N]=V;//cells[N]/V;
-	}
-	*/
+
 	std::cout<<"T.number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
 	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
 	bool* bool_list=new bool[T.number_of_finite_cells()];
-	bool* bool_list2=new bool[T.number_of_finite_cells()];
+
 	N=0;
 	double D=0.4;
 	int count=0;
@@ -653,9 +641,11 @@ int main()
 	{
 		bool_list[N]=true;
 		if(cells[N]<1)bool_list[N]=false;
-		//bool_list2[N]=true;
+
 	}
 	std::cout<<"start refine"<<endl;
+
+	
 	int TT=0;
 	for(int i=0;i<200;i++)
 	{
@@ -680,12 +670,30 @@ int main()
 					num++;
 				}
 			}
+			if(bool_list[N]==true)
+			{
+				int count=0;
+				for(int i=0;i<4;i++)
+				{
+					Delaunay::Cell_handle _neighbor=itr->neighbor(i);
+					std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
+					if(it_N!=index.end())
+					{
+						if(!bool_list[it_N->second])count++;
+					}
+				}
+				if(count>2){
+					bool_list[N]=false;
+					num++;
+				}
+			}
 		}
+
 		TT++;
 		std::cout<<"refine:"<<TT<<", corrected:"<<num<<endl;
 		if(num==0)break;
 	}
-
+	
 	N=0;
 
 
@@ -696,61 +704,66 @@ int main()
 	std::cout<<"count up boundary facets"<<endl;
 	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
-		for(int i=0;i<4;i++)
+		if(bool_list[N])
 		{
-			Delaunay::Cell_handle _neighbor=itr->neighbor(i);
-			std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
-			if(it_N==index.end())
+			for(int i=0;i<4;i++)
 			{
-				if(bool_list[N])
-					facet_list.push_back(Delaunay::Facet(itr,i));
-			}else
-			{
-				if(bool_list[N]&&(!bool_list[it_N->second]))
+				Delaunay::Cell_handle nei=itr->neighbor(i);
+				
+				std::map<Delaunay::Cell_handle,int>::iterator itr_c=index.find(nei);
+				if(itr_c==index.end())
 				{
-					//if(density[it_N->second]>0.00001)
 					facet_list.push_back(Delaunay::Facet(itr,i));
+				}else
+				{
+					int N2=itr_c->second;
+					if(!bool_list[N2])
+						facet_list.push_back(Delaunay::Facet(itr,i));
 				}
 			}
 		}
 		if(((int)N/NN)*NN==N)std::cout<<"*";
 	}
+	
 	std::cout<<endl;
-	std::cout<<"complex created"<<endl;
 	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
-	delete(bool_list);
-	delete(bool_list2);
 	
-	//File write
-
-	
-	std::map<Delaunay::Vertex_handle,int> vIndex;
+	//File write	
 	filename="c:/out/"+NAME+".out";
 	string filename2="c:/out/"+NAME+"_S.out";
-	//string filename3="c:/out/"+NAME+"_F.out";
+	string filename3="c:/out/"+NAME+"_F.out";
 	std::cout<<"start writing file"<<"["<<filename<<"]"<<endl;
 	ofstream ofs(filename);
 	ofstream ofs2(filename2);
-	//ofstream ofs3(filename3);
+	ofstream ofs3(filename3);
 	
 	N=0;
-	/*for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
+	NN=T.number_of_finite_cells()/20;
+	if(NN=0)NN=1;
+	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
-		Point PA=itr->vertex(0)->point();
-		Point PB=itr->vertex(1)->point();
-		Point PC=itr->vertex(2)->point();
-		Point PD=itr->vertex(3)->point();
-		double x=(PA.x()+PB.x()+PC.x()+PD.x())/4.;
-		double y=(PA.y()+PB.y()+PC.y()+PD.y())/4.;
-		double z=(PA.z()+PB.z()+PC.z()+PD.z())/4.;
-		Point center(x,y,z);
-		ofs3<<center.x()<<" , "<<center.y()<<" , "<<center.z()<<" , "<<density[N]<<endl;
-	}*/
+		if(bool_list[N])
+		{
+			Point PA=itr->vertex(0)->point();
+			Point PB=itr->vertex(1)->point();
+			Point PC=itr->vertex(2)->point();
+			Point PD=itr->vertex(3)->point();
+			ofs3<<PA.x()<<" , "<<PA.y()<<" , "<<PA.z();
+			ofs3<<" , "<<PB.x()<<" , "<<PB.y()<<" , "<<PB.z();
+			ofs3<<" , "<<PC.x()<<" , "<<PC.y()<<" , "<<PC.z();
+			ofs3<<" , "<<PD.x()<<" , "<<PD.y()<<" , "<<PD.z()<<endl;
+		}
+		if(((int)N/NN)*NN==N)std::cout<<"*";
+	}
+	std::cout<<endl;
 	N=0;
 	num=0;
 	NN=facet_list.size()/20;
 	if(NN==0)NN=1;
-	for(vector<Delaunay::Facet>::iterator itr=facet_list.begin();itr!=facet_list.end();itr++,num++)
+
+	std::map<Delaunay::Vertex_handle,int> vIndex;
+
+	for(auto itr=facet_list.begin();itr!=facet_list.end();itr++,num++)
 	{
 		for(int i=0;i<4;i++)
 		{
@@ -761,7 +774,8 @@ int main()
 				if(pair==vIndex.end())
 				{
 					Delaunay::Point P=handle->point();
-					ofs<<P.x()<<" , "<<P.y()<<" , "<<P.z()<<endl;
+					double x=P.x(),y=P.y(),z=P.z();
+					ofs<<x<<" , "<<y<<" , "<<z<<endl;
 					vIndex.insert(std::make_pair(handle,N));
 					ofs2<<N<<" ";
 					N++;
@@ -771,13 +785,14 @@ int main()
 				}
 			}
 		}
-		if(((int)num/NN)*NN==num)std::cout<<"*";
 		ofs2<<endl;
+		if(((int)num/NN)*NN==num)std::cout<<"*";
 	}
+	
 	std::cout<<endl;
 	ofs.close();
 	ofs2.close();
-	//ofs3.close();
+	ofs3.close();
 	ofs4.close();
 	
 	
@@ -796,8 +811,7 @@ int main()
 		delete(*itr);
 	}
 	delete(cells);
-	//delete(volume);
-	delete(density);
+	delete(bool_list);
 
 
 
