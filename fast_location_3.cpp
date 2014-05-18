@@ -38,11 +38,17 @@ typedef Delaunay::Cell_handle Cell_handle;
 typedef Delaunay::Vertex_handle Vertex_handle;
 typedef Delaunay::Locate_type    Locate_type;
 using namespace std;
-int main()
+int main(int argc, char *argv[])
 {
+	if(argc<2)return 0;
+	string argv1 = argv[1];
+    std::vector<string> leftright;
+	string filename=argv1;
+	
+	boost::algorithm::split(leftright , argv1, boost::algorithm::is_any_of("."));
+	string NAME=leftright[0];
+
 	double pi=boost::math::constants::pi<double>();
-	string NAME="heart";
-	string filename="c:/out/"+NAME+".txt";
 	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
 
 	ifstream ifs(filename);
@@ -463,7 +469,7 @@ int main()
 	}
 	std::cout<<"interior.size():"<<N<<endl;
 	
-	string filename4="c:/out/"+NAME+"_D.out";
+	string filename4=NAME+"_D.out";
 	ofstream ofs4(filename4);
 	
 	int size=N;
@@ -627,9 +633,6 @@ int main()
 	}
 	std::cout<<endl;
 	
-	
-	
-
 	std::cout<<"T.number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
 	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
 	bool* bool_list=new bool[T.number_of_finite_cells()];
@@ -694,9 +697,73 @@ int main()
 		if(num==0)break;
 	}
 	
+	std::cout<<"erase irregular incident cells"<<endl;
 	N=0;
-
-
+	NN=T.number_of_vertices()/20;
+	if(NN==0)NN=1;
+	int totalCount=0;
+	for(auto itr=T.vertices_begin();itr!=T.vertices_end();itr++,N++)
+	{
+		std::list<Cell_handle> _cells; 
+		std::list<Cell_handle> cells; 
+		std::list<Cell_handle> cells2; 
+		std::list<Cell_handle> cells3; 
+		T.incident_cells(itr,std::back_inserter(_cells)); 
+		if(_cells.empty())continue;
+		for(auto itr=_cells.begin();itr!=_cells.end();itr++)
+		{
+			map<Cell_handle,int>::iterator itr2=index.find(*itr);
+			if(itr2!=index.end())
+			{
+				int N=itr2->second;
+				if(bool_list[N])
+				{
+					cells.push_back(*itr);
+				}
+			}
+		}
+		if(cells.empty())continue;
+		if(cells.size()==1)continue;
+		cells2.push_back(*cells.begin());
+		cells.pop_front();
+		while(true)
+		{
+			int count=0;
+			for(auto itr=cells.begin();itr!=cells.end();itr++)
+			{
+				for(int i=0;i<4;i++)
+				{
+					Cell_handle nei=(*itr)->neighbor(i);
+					if(std::find(cells2.begin(),cells2.end(),nei)!=cells2.end())
+					{
+						cells3.push_back(*itr);
+						count++;
+						break;
+					}
+				}
+			}
+			for(auto itr=cells3.begin();itr!=cells3.end();itr++)
+			{
+				cells.erase(std::find(cells.begin(),cells.end(),*itr));
+				cells2.push_back(*itr);
+			}
+			cells3.clear();
+			if(count==0)break;
+		}
+		if(cells.size()!=0){
+			std::list<Cell_handle> toErase;
+			if(cells.size()<cells2.size()) toErase=cells; else toErase=cells2;
+			for(auto itr=toErase.begin();itr!=toErase.end();itr++)
+			{
+				int N=index.find(*itr)->second;
+				bool_list[N]=false;
+				totalCount++;
+			}
+		}
+		if(((int)N/NN)*NN==N)std::cout<<"*";
+	}
+	std::cout<<endl;
+	std::cout<<totalCount<<"cells removed!"<<endl;
 	NN=T.number_of_finite_facets()/20;
 	if(NN<1)NN=1;
 	N=0;
@@ -729,17 +796,17 @@ int main()
 	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
 	
 	//File write	
-	filename="c:/out/"+NAME+".out";
-	string filename2="c:/out/"+NAME+"_S.out";
-	string filename3="c:/out/"+NAME+"_F.out";
+	filename=NAME+".out";
+	string filename2=NAME+"_S.out";
+	//string filename3=NAME+"_F.out";
 	std::cout<<"start writing file"<<"["<<filename<<"]"<<endl;
 	ofstream ofs(filename);
 	ofstream ofs2(filename2);
-	ofstream ofs3(filename3);
-	
+	//ofstream ofs3(filename3);
+	/*
 	N=0;
 	NN=T.number_of_finite_cells()/20;
-	if(NN=0)NN=1;
+	if(NN==0)NN=1;
 	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 	{
 		if(bool_list[N])
@@ -755,7 +822,7 @@ int main()
 		}
 		if(((int)N/NN)*NN==N)std::cout<<"*";
 	}
-	std::cout<<endl;
+	std::cout<<endl;*/
 	N=0;
 	num=0;
 	NN=facet_list.size()/20;
@@ -792,7 +859,7 @@ int main()
 	std::cout<<endl;
 	ofs.close();
 	ofs2.close();
-	ofs3.close();
+	//ofs3.close();
 	ofs4.close();
 	
 	
