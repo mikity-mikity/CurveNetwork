@@ -837,60 +837,76 @@ int main(int argc, char *argv[])
 			std::list<Cell_handle> cells; 
 			std::list<Cell_handle> cells2; 
 			std::list<Cell_handle> cells3; 
-			T.incident_cells(itr); 
-			if(_cells.empty())continue;
-			for(auto itr=_cells.begin();itr!=_cells.end();itr++)
-			{
-				map<Cell_handle,int>::iterator itr2=index.find(*itr);
-				if(itr2!=index.end())
-				{
-					int N=itr2->second;
-					if(bool_list[N])
-					{
-						cells.push_back(*itr);
-					}
-				}
-			}
-			if(cells.empty())continue;
-			if(cells.size()==1)continue;
-			cells2.push_back(*cells.begin());
-			cells.pop_front();
+			Delaunay::Cell_circulator circle=T.incident_cells(*itr); 
+			Delaunay::Cell_circulator begin=circle;
+			std::map<Cell_handle,int>::iterator it=index.find(circle);
+			if(it==index.end())continue;
+			bool flag=bool_list[it->second];
+			int counter=0;
+			std::vector<Delaunay::Cell_circulator> start;
 			while(true)
 			{
-				int count=0;
-				for(auto itr=cells.begin();itr!=cells.end();itr++)
+				circle++;
+				it=index.find(circle);
+				if(it==index.end())
 				{
-					for(int i=0;i<4;i++)
+					if(flag==true)
 					{
-						Cell_handle nei=(*itr)->neighbor(i);
-						if(std::find(cells2.begin(),cells2.end(),nei)!=cells2.end())
+						flag=false;
+						counter++;
+					}
+				}else if(bool_list[it->second]!=flag){
+					flag=bool_list[it->second];
+					if(flag)
+					{
+						start.push_back(circle);
+					}
+					counter++;
+				}
+				if(circle==begin)break;
+			}
+			if(counter==4)
+			{
+				std::vector<int> len;
+				for(int i=0;i<2;i++)
+				{
+					Delaunay::Cell_circulator s=start[i];
+					int L=0;
+					while(true)
+					{
+						circle++;
+						L++;
+						it=index.find(circle);
+						if(it==index.end())
 						{
-							cells3.push_back(*itr);
-							count++;
+							break;
+						}else if(bool_list[it->second]==false){
 							break;
 						}
 					}
+					len.push_back(L);
 				}
-				for(auto itr=cells3.begin();itr!=cells3.end();itr++)
+				Delaunay::Cell_circulator toErase;
+				if(len[0]<len[1]){
+					toErase=start[0];
+				}else
 				{
-					cells.erase(std::find(cells.begin(),cells.end(),*itr));
-					cells2.push_back(*itr);
+					toErase=start[1];
 				}
-				cells3.clear();
-				if(count==0)break;
-			}
-			if(cells.size()!=0){
-				std::list<Cell_handle> toErase;
-				if(cells.size()<cells2.size()) toErase=cells; else toErase=cells2;
-				for(auto itr=toErase.begin();itr!=toErase.end();itr++)
+				while(true)
 				{
-					int N=index.find(*itr)->second;
-					bool_list[N]=false;
-					//everything++;
+					it=index.find(toErase);
+					if(it==index.end())
+					{
+						break;
+					}else if(bool_list[it->second]==false){
+						break;
+					}
+					bool_list[it->second]=false;
+					toErase++;
 					totalCount++;
 				}
 			}
-			if(((int)N/NN)*NN==N)std::cout<<"*";
 		}
 		std::cout<<endl;
 		std::cout<<totalCount<<"cells removed!"<<endl;
