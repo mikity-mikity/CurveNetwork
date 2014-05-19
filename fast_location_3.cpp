@@ -345,7 +345,6 @@ int main(int argc, char *argv[])
 	}
 	std::cout<<endl;
 	std::cout<<"end triangulation"<<endl;
-	std::cout<<"isValid"<<T.is_valid()<<endl;
 	std::cout<<"T.number_of_vertices:"<<T.number_of_vertices()<<endl;
 	std::cout<<"number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
 	std::map<Delaunay::Cell_handle,int> index;
@@ -764,6 +763,108 @@ int main(int argc, char *argv[])
 	}
 	std::cout<<endl;
 	std::cout<<totalCount<<"cells removed!"<<endl;
+
+	std::cout<<"erase bubbles"<<endl;
+	std::map<Cell_handle,int> _cells; 
+	std::list<Cell_handle> cells1; 
+	std::list<Cell_handle> cells2; 
+	std::vector<std::list<Cell_handle>> cell_group;
+	totalCount=0;
+	N=0;
+	for(auto itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++)
+	{
+		if(bool_list[index.find(itr)->second]==false)
+		{
+			_cells.insert(std::make_pair(itr,N));
+			totalCount++;
+			N++;
+		}
+	}
+	NN=totalCount/20;
+	if(NN=0)NN=1;
+	cells2.push_back(_cells.begin()->first);
+	_cells.erase(_cells.begin()->first);
+	N=0;
+	std::cout<<"totalCount:"<<totalCount<<endl;
+	while(!_cells.empty())
+	{
+		std::list<Cell_handle> cells3; 
+		while(!cells2.empty())
+		{
+			if(!_cells.empty())
+			{
+				for(auto itr=cells2.begin();itr!=cells2.end();itr++)
+				{
+					for(int i=0;i<4;i++)
+					{
+						Cell_handle nei=(*itr)->neighbor(i);
+						std::map<Cell_handle,int>::iterator it=_cells.find(nei);
+						if(it!=_cells.end())
+						{
+							cells1.push_back(nei);
+							_cells.erase(nei);
+							N++;
+							if(((int)N/NN)*NN==N)std::cout<<"*";
+						}
+					}
+				}
+			}
+			for(auto itr=cells2.begin();itr!=cells2.end();itr++)
+			{
+				cells3.push_back(*itr);
+			}
+			cells2.clear();
+			if(!cells1.empty()){
+				for(auto itr=cells1.begin();itr!=cells1.end();itr++)
+				{
+					cells2.push_back(*itr);
+				}
+				cells1.clear();
+			}
+		}
+		if(!cells2.empty())
+		{
+			for(auto itr=cells2.begin();itr!=cells2.end();itr++)
+			{
+				cells3.push_back(*itr);
+			}
+		}
+		std::cout<<"cells3.size()"<<cells3.size()<<endl;
+		if(!cells3.empty())
+			cell_group.push_back(cells3);
+		if(!_cells.empty())
+		{
+			cells2.push_back(_cells.begin()->first);
+			_cells.erase(_cells.begin()->first);
+		}
+	}
+	std::cout<<endl;
+	std::cout<<cell_group.size()<<"group found"<<endl;
+	count=0;
+	for(auto itr=cell_group.begin();itr!=cell_group.end();itr++)
+	{
+		bool flag=false;
+		for(auto itr2=(*itr).begin();itr2!=(*itr).end();itr2++)
+		{
+			for(int i=0;i<4;i++)
+			{
+				if(index.find((*itr2)->neighbor(i))==index.end())
+				{
+					flag=true;
+				}
+			}
+			if(flag)break;
+		}
+		if(!flag)
+		{
+			for(auto itr2=(*itr).begin();itr2!=(*itr).end();itr2++)
+			{
+				bool_list[index.find(*itr2)->second]=true;
+				count++;
+			}
+		}
+	}
+	std::cout<<count<<"cells recovered"<<endl;
 	NN=T.number_of_finite_facets()/20;
 	if(NN<1)NN=1;
 	N=0;
