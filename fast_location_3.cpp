@@ -646,9 +646,9 @@ int main(int argc, char *argv[])
 
 	}
 	std::cout<<"start refine"<<endl;
-	//int everything=1;
-	//while(everything>0){
-		//everything=0;
+	int everything=1;
+	while(everything>0){
+		everything=0;
 		std::cout<<"erase bubbles"<<endl;
 		std::map<Cell_handle,int> _cells; 
 		std::list<Cell_handle> cells1; 
@@ -744,7 +744,7 @@ int main(int argc, char *argv[])
 				for(auto itr2=(*itr).begin();itr2!=(*itr).end();itr2++)
 				{
 					bool_list[index.find(*itr2)->second]=true;
-					//everything++;
+					everything++;
 					count++;
 				}
 			}
@@ -813,7 +813,7 @@ int main(int argc, char *argv[])
 					{
 						int N=index.find(*itr)->second;
 						bool_list[N]=false;
-						//everything++;
+						everything++;
 						totalCount++;
 					}
 				}
@@ -844,7 +844,7 @@ int main(int argc, char *argv[])
 					}
 					if(count>2){
 						bool_list[N]=true;
-						//everything++;
+						everything++;
 						num++;
 					}
 				}
@@ -862,7 +862,7 @@ int main(int argc, char *argv[])
 					}
 					if(count>2){
 						bool_list[N]=false;
-						//everything++;
+						everything++;
 						num++;
 					}
 				}
@@ -874,7 +874,7 @@ int main(int argc, char *argv[])
 		}
 	
 
-	//}
+	}
 	NN=T.number_of_finite_facets()/20;
 	if(NN<1)NN=1;
 	N=0;
