@@ -646,235 +646,310 @@ int main(int argc, char *argv[])
 
 	}
 	std::cout<<"start refine"<<endl;
-	int everything=1;
-	while(everything>0){
-		everything=0;
-		std::cout<<"erase bubbles"<<endl;
-		std::map<Cell_handle,int> _cells; 
-		std::list<Cell_handle> cells1; 
-		std::list<Cell_handle> cells2; 
-		std::vector<std::list<Cell_handle>> cell_group;
-		int totalCount=0;
-		N=0;
-		for(auto itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++)
+	//int everything=1;
+	//while(everything>0){
+	//everything=0;
+	std::cout<<"erase bubbles"<<endl;
+	std::map<Cell_handle,int> _cells; 
+	std::list<Cell_handle> cells1; 
+	std::list<Cell_handle> cells2; 
+	std::vector<std::list<Cell_handle>> cell_group;
+	int totalCount=0;
+	N=0;
+	for(auto itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++)
+	{
+		if(bool_list[index.find(itr)->second]==false)
 		{
-			if(bool_list[index.find(itr)->second]==false)
-			{
-				_cells.insert(std::make_pair(itr,N));
-				totalCount++;
-				N++;
-			}
+			_cells.insert(std::make_pair(itr,N));
+			totalCount++;
+			N++;
 		}
-		NN=totalCount/20;
-		if(NN=0)NN=1;
-		cells2.push_back(_cells.begin()->first);
-		_cells.erase(_cells.begin()->first);
-		N=0;
-		std::cout<<"totalCount:"<<totalCount<<endl;
-		while(!_cells.empty())
+	}
+	NN=totalCount/20;
+	if(NN=0)NN=1;
+	cells2.push_back(_cells.begin()->first);
+	_cells.erase(_cells.begin()->first);
+	N=0;
+	std::cout<<"totalCount:"<<totalCount<<endl;
+	while(!_cells.empty())
+	{
+		std::list<Cell_handle> cells3; 
+		while(!cells2.empty())
 		{
-			std::list<Cell_handle> cells3; 
-			while(!cells2.empty())
-			{
-				if(!_cells.empty())
-				{
-					for(auto itr=cells2.begin();itr!=cells2.end();itr++)
-					{
-						for(int i=0;i<4;i++)
-						{
-							Cell_handle nei=(*itr)->neighbor(i);
-							std::map<Cell_handle,int>::iterator it=_cells.find(nei);
-							if(it!=_cells.end())
-							{
-								cells1.push_back(nei);
-								_cells.erase(nei);
-								N++;
-								if(((int)N/NN)*NN==N)std::cout<<"*";
-							}
-						}
-					}
-				}
-				for(auto itr=cells2.begin();itr!=cells2.end();itr++)
-				{
-					cells3.push_back(*itr);
-				}
-				cells2.clear();
-				if(!cells1.empty()){
-					for(auto itr=cells1.begin();itr!=cells1.end();itr++)
-					{
-						cells2.push_back(*itr);
-					}
-					cells1.clear();
-				}
-			}
-			if(!cells2.empty())
-			{
-				for(auto itr=cells2.begin();itr!=cells2.end();itr++)
-				{
-					cells3.push_back(*itr);
-				}
-			}
-			if(!cells3.empty())
-				cell_group.push_back(cells3);
 			if(!_cells.empty())
 			{
-				cells2.push_back(_cells.begin()->first);
-				_cells.erase(_cells.begin()->first);
+				for(auto itr=cells2.begin();itr!=cells2.end();itr++)
+				{
+					for(int i=0;i<4;i++)
+					{
+						Cell_handle nei=(*itr)->neighbor(i);
+						std::map<Cell_handle,int>::iterator it=_cells.find(nei);
+						if(it!=_cells.end())
+						{
+							cells1.push_back(nei);
+							_cells.erase(nei);
+							N++;
+							if(((int)N/NN)*NN==N)std::cout<<"*";
+						}
+					}
+				}
+			}
+			for(auto itr=cells2.begin();itr!=cells2.end();itr++)
+			{
+				cells3.push_back(*itr);
+			}
+			cells2.clear();
+			if(!cells1.empty()){
+				for(auto itr=cells1.begin();itr!=cells1.end();itr++)
+				{
+					cells2.push_back(*itr);
+				}
+				cells1.clear();
 			}
 		}
-		std::cout<<endl;
-		std::cout<<cell_group.size()<<"group found"<<endl;
-		count=0;
-		for(auto itr=cell_group.begin();itr!=cell_group.end();itr++)
+		if(!cells2.empty())
 		{
-			bool flag=false;
+			for(auto itr=cells2.begin();itr!=cells2.end();itr++)
+			{
+				cells3.push_back(*itr);
+			}
+		}
+		if(!cells3.empty())
+			cell_group.push_back(cells3);
+		if(!_cells.empty())
+		{
+			cells2.push_back(_cells.begin()->first);
+			_cells.erase(_cells.begin()->first);
+		}
+	}
+	std::cout<<endl;
+	std::cout<<cell_group.size()<<"group found"<<endl;
+	count=0;
+	for(auto itr=cell_group.begin();itr!=cell_group.end();itr++)
+	{
+		bool flag=false;
+		for(auto itr2=(*itr).begin();itr2!=(*itr).end();itr2++)
+		{
+			for(int i=0;i<4;i++)
+			{
+				if(index.find((*itr2)->neighbor(i))==index.end())
+				{
+					flag=true;
+				}
+			}
+			if(flag)break;
+		}
+		if(!flag)
+		{
 			for(auto itr2=(*itr).begin();itr2!=(*itr).end();itr2++)
 			{
+				bool_list[index.find(*itr2)->second]=true;
+				//everything++;
+				count++;
+			}
+		}
+	}
+	std::cout<<count<<"cells recovered"<<endl;
+
+	std::cout<<"erase irregular incident vertices"<<endl;
+	while(true)
+	{
+		N=0;
+		NN=T.number_of_vertices()/20;
+		if(NN==0)NN=1;
+		totalCount=0;
+		for(auto itr=T.vertices_begin();itr!=T.vertices_end();itr++,N++)
+		{
+			std::list<Cell_handle> _cells; 
+			std::list<Cell_handle> cells; 
+			std::list<Cell_handle> cells2; 
+			std::list<Cell_handle> cells3; 
+			T.incident_cells(itr,std::back_inserter(_cells)); 
+			if(_cells.empty())continue;
+			for(auto itr=_cells.begin();itr!=_cells.end();itr++)
+			{
+				map<Cell_handle,int>::iterator itr2=index.find(*itr);
+				if(itr2!=index.end())
+				{
+					int N=itr2->second;
+					if(bool_list[N])
+					{
+						cells.push_back(*itr);
+					}
+				}
+			}
+			if(cells.empty())continue;
+			if(cells.size()==1)continue;
+			cells2.push_back(*cells.begin());
+			cells.pop_front();
+			while(true)
+			{
+				int count=0;
+				for(auto itr=cells.begin();itr!=cells.end();itr++)
+				{
+					for(int i=0;i<4;i++)
+					{
+						Cell_handle nei=(*itr)->neighbor(i);
+						if(std::find(cells2.begin(),cells2.end(),nei)!=cells2.end())
+						{
+							cells3.push_back(*itr);
+							count++;
+							break;
+						}
+					}
+				}
+				for(auto itr=cells3.begin();itr!=cells3.end();itr++)
+				{
+					cells.erase(std::find(cells.begin(),cells.end(),*itr));
+					cells2.push_back(*itr);
+				}
+				cells3.clear();
+				if(count==0)break;
+			}
+			if(cells.size()!=0){
+				std::list<Cell_handle> toErase;
+				if(cells.size()<cells2.size()) toErase=cells; else toErase=cells2;
+				for(auto itr=toErase.begin();itr!=toErase.end();itr++)
+				{
+					int N=index.find(*itr)->second;
+					bool_list[N]=false;
+					//everything++;
+					totalCount++;
+				}
+			}
+			if(((int)N/NN)*NN==N)std::cout<<"*";
+		}
+		std::cout<<endl;
+		std::cout<<totalCount<<"cells removed!"<<endl;
+		if(totalCount==0)break;
+	}
+
+	std::cout<<"erase irregular incident edges"<<endl;
+	while(true)
+	{
+		N=0;
+		NN=T.number_of_edges()/20;
+		if(NN==0)NN=1;
+		totalCount=0;
+		for(auto itr=T.finite_edges_begin();itr!=T.finite_edges_end();itr++,N++)
+		{
+			std::list<Cell_handle> _cells; 
+			std::list<Cell_handle> cells; 
+			std::list<Cell_handle> cells2; 
+			std::list<Cell_handle> cells3; 
+			T.incident_cells(itr); 
+			if(_cells.empty())continue;
+			for(auto itr=_cells.begin();itr!=_cells.end();itr++)
+			{
+				map<Cell_handle,int>::iterator itr2=index.find(*itr);
+				if(itr2!=index.end())
+				{
+					int N=itr2->second;
+					if(bool_list[N])
+					{
+						cells.push_back(*itr);
+					}
+				}
+			}
+			if(cells.empty())continue;
+			if(cells.size()==1)continue;
+			cells2.push_back(*cells.begin());
+			cells.pop_front();
+			while(true)
+			{
+				int count=0;
+				for(auto itr=cells.begin();itr!=cells.end();itr++)
+				{
+					for(int i=0;i<4;i++)
+					{
+						Cell_handle nei=(*itr)->neighbor(i);
+						if(std::find(cells2.begin(),cells2.end(),nei)!=cells2.end())
+						{
+							cells3.push_back(*itr);
+							count++;
+							break;
+						}
+					}
+				}
+				for(auto itr=cells3.begin();itr!=cells3.end();itr++)
+				{
+					cells.erase(std::find(cells.begin(),cells.end(),*itr));
+					cells2.push_back(*itr);
+				}
+				cells3.clear();
+				if(count==0)break;
+			}
+			if(cells.size()!=0){
+				std::list<Cell_handle> toErase;
+				if(cells.size()<cells2.size()) toErase=cells; else toErase=cells2;
+				for(auto itr=toErase.begin();itr!=toErase.end();itr++)
+				{
+					int N=index.find(*itr)->second;
+					bool_list[N]=false;
+					//everything++;
+					totalCount++;
+				}
+			}
+			if(((int)N/NN)*NN==N)std::cout<<"*";
+		}
+		std::cout<<endl;
+		std::cout<<totalCount<<"cells removed!"<<endl;
+		if(totalCount==0)break;
+	}
+
+	std::cout<<"push and pop"<<endl;
+	int TT=0;
+	while(true)
+	{
+		num=0;
+		N=0;
+		for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
+		{
+			if(bool_list[N]==false)
+			{
+				int count=0;
 				for(int i=0;i<4;i++)
 				{
-					if(index.find((*itr2)->neighbor(i))==index.end())
+					Delaunay::Cell_handle _neighbor=itr->neighbor(i);
+					std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
+					if(it_N!=index.end())
 					{
-						flag=true;
+						if(bool_list[it_N->second])count++;
 					}
 				}
-				if(flag)break;
+				if(count>2){
+					bool_list[N]=true;
+					//everything++;
+					num++;
+				}
 			}
-			if(!flag)
+			if(bool_list[N]==true)
 			{
-				for(auto itr2=(*itr).begin();itr2!=(*itr).end();itr2++)
+				int count=0;
+				for(int i=0;i<4;i++)
 				{
-					bool_list[index.find(*itr2)->second]=true;
-					everything++;
-					count++;
+					Delaunay::Cell_handle _neighbor=itr->neighbor(i);
+					std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
+					if(it_N!=index.end())
+					{
+						if(!bool_list[it_N->second])count++;
+					}
+				}
+				if(count>2){
+					bool_list[N]=false;
+					//everything++;
+					num++;
 				}
 			}
 		}
-		std::cout<<count<<"cells recovered"<<endl;
 
-		std::cout<<"erase irregular incident cells"<<endl;
-		while(true)
-		{
-			N=0;
-			NN=T.number_of_vertices()/20;
-			if(NN==0)NN=1;
-			totalCount=0;
-			for(auto itr=T.vertices_begin();itr!=T.vertices_end();itr++,N++)
-			{
-				std::list<Cell_handle> _cells; 
-				std::list<Cell_handle> cells; 
-				std::list<Cell_handle> cells2; 
-				std::list<Cell_handle> cells3; 
-				T.incident_cells(itr,std::back_inserter(_cells)); 
-				if(_cells.empty())continue;
-				for(auto itr=_cells.begin();itr!=_cells.end();itr++)
-				{
-					map<Cell_handle,int>::iterator itr2=index.find(*itr);
-					if(itr2!=index.end())
-					{
-						int N=itr2->second;
-						if(bool_list[N])
-						{
-							cells.push_back(*itr);
-						}
-					}
-				}
-				if(cells.empty())continue;
-				if(cells.size()==1)continue;
-				cells2.push_back(*cells.begin());
-				cells.pop_front();
-				while(true)
-				{
-					int count=0;
-					for(auto itr=cells.begin();itr!=cells.end();itr++)
-					{
-						for(int i=0;i<4;i++)
-						{
-							Cell_handle nei=(*itr)->neighbor(i);
-							if(std::find(cells2.begin(),cells2.end(),nei)!=cells2.end())
-							{
-								cells3.push_back(*itr);
-								count++;
-								break;
-							}
-						}
-					}
-					for(auto itr=cells3.begin();itr!=cells3.end();itr++)
-					{
-						cells.erase(std::find(cells.begin(),cells.end(),*itr));
-						cells2.push_back(*itr);
-					}
-					cells3.clear();
-					if(count==0)break;
-				}
-				if(cells.size()!=0){
-					std::list<Cell_handle> toErase;
-					if(cells.size()<cells2.size()) toErase=cells; else toErase=cells2;
-					for(auto itr=toErase.begin();itr!=toErase.end();itr++)
-					{
-						int N=index.find(*itr)->second;
-						bool_list[N]=false;
-						everything++;
-						totalCount++;
-					}
-				}
-				if(((int)N/NN)*NN==N)std::cout<<"*";
-			}
-			std::cout<<endl;
-			std::cout<<totalCount<<"cells removed!"<<endl;
-			if(totalCount==0)break;
-		}
-		int TT=0;
-		while(true)
-		{
-			num=0;
-			N=0;
-			for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
-			{
-				if(bool_list[N]==false)
-				{
-					int count=0;
-					for(int i=0;i<4;i++)
-					{
-						Delaunay::Cell_handle _neighbor=itr->neighbor(i);
-						std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
-						if(it_N!=index.end())
-						{
-							if(bool_list[it_N->second])count++;
-						}
-					}
-					if(count>2){
-						bool_list[N]=true;
-						everything++;
-						num++;
-					}
-				}
-				if(bool_list[N]==true)
-				{
-					int count=0;
-					for(int i=0;i<4;i++)
-					{
-						Delaunay::Cell_handle _neighbor=itr->neighbor(i);
-						std::map<Delaunay::Cell_handle,int>::iterator it_N=index.find(_neighbor);
-						if(it_N!=index.end())
-						{
-							if(!bool_list[it_N->second])count++;
-						}
-					}
-					if(count>2){
-						bool_list[N]=false;
-						everything++;
-						num++;
-					}
-				}
-			}
-
-			TT++;
-			std::cout<<"refine:"<<TT<<", corrected:"<<num<<endl;
-			if(num==0)break;
-		}
+		TT++;
+		std::cout<<"refine:"<<TT<<", corrected:"<<num<<endl;
+		if(num==0)break;
+	}
 	
 
-	}
+	//}
 	NN=T.number_of_finite_facets()/20;
 	if(NN<1)NN=1;
 	N=0;
