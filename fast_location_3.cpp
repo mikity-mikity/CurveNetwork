@@ -939,7 +939,7 @@ int main(int argc, char *argv[])
 					num++;
 				}
 			}
-			if(bool_list[N]==true)
+			/*if(bool_list[N]==true)
 			{
 				int count=0;
 				for(int i=0;i<4;i++)
@@ -956,7 +956,7 @@ int main(int argc, char *argv[])
 					//everything++;
 					num++;
 				}
-			}
+			}*/
 		}
 
 		TT++;
@@ -964,7 +964,7 @@ int main(int argc, char *argv[])
 		if(num==0)break;
 	}
 	
-
+	
 	//}
 	NN=T.number_of_finite_facets()/20;
 	if(NN<1)NN=1;
