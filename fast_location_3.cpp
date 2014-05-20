@@ -912,7 +912,7 @@ int main(int argc, char *argv[])
 		std::cout<<totalCount<<"cells removed!"<<endl;
 		if(totalCount==0)break;
 	}
-
+	
 	std::cout<<"push and pop"<<endl;
 	int TT=0;
 	while(true)
