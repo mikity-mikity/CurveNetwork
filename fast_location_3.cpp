@@ -15,7 +15,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 //typedef CGAL::Triangulation_3<K>      Delaunay;
 //typedef CGAL::Triangulation_vertex_base_with_info_3<unsigned,K>    Vb;
 //typedef CGAL::Triangulation_data_structure_3<Vb>                    Tds;
-typedef CGAL::Delaunay_triangulation_3<K/*,CGAL::Fast_location*/> Delaunay;
+typedef CGAL::Delaunay_triangulation_3<K,CGAL::Fast_location> Delaunay;
 typedef Delaunay::Point Point;
 typedef CGAL::Vector_3<K> Vector;
 typedef std::vector<Point> br;
@@ -223,7 +223,6 @@ int main(int argc, char *argv[])
 		}
 		while(itrC!=_branch->end()-1)
 		{
-			//exterior.push_back(*itrC);
 			//Division number along line
 			Point P=*itrC;
 			Point Q=*(itrC+1);
@@ -279,7 +278,7 @@ int main(int argc, char *argv[])
 			for(int ss=0;ss<DIV2;ss++)
 			{
 				double s=((double)ss)/((double)DIV);
-				exterior.push_back(Point((*itrC).x()*(1-s)+(*(itrC+1)).x()*s,(*itrC).y()*(1-s)+(*(itrC+1)).y()*s,(*itrC).z()*(1-s)+(*(itrC+1)).z()*s));
+				//exterior.push_back(Point((*itrC).x()*(1-s)+(*(itrC+1)).x()*s,(*itrC).y()*(1-s)+(*(itrC+1)).y()*s,(*itrC).z()*(1-s)+(*(itrC+1)).z()*s));
 				for(int i=0;i<RDIV;i++)
 				{
 					double theta=(double)(i)/RDIV*2.*pi;
@@ -304,13 +303,13 @@ int main(int argc, char *argv[])
 					{
 						Point DI(DI2.x()*s+DI1.x()*(1-s),DI2.y()*s+DI1.y()*(1-s),DI2.z()*s+DI1.z()*(1-s));
 						Point DE(DE2.x()*s+DE1.x()*(1-s),DE2.y()*s+DE1.y()*(1-s),DE2.z()*s+DE1.z()*(1-s));
-						exterior.push_back(DI);
+						//exterior.push_back(DI);
 						exterior.push_back(DE);
 					}else
 					{
 						Point DI(DI2.x()*s+DI1.x()*(1-s),DI2.y()*s+DI1.y()*(1-s),DI2.z()*s+DI1.z()*(1-s));
 						Point DE(DE2.x()*s+DE1.x()*(1-s),DE2.y()*s+DE1.y()*(1-s),DE2.z()*s+DE1.z()*(1-s));
-						exterior.push_back(DI);
+						//exterior.push_back(DI);
 						exterior.push_back(DE);
 					}
 				}
