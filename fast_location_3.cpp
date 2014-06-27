@@ -249,7 +249,8 @@ int main(int argc, char *argv[])
 				}
 				beforeX=CGAL::cross_product(V,Z);
 				beforeY=CGAL::cross_product(V,beforeX);
-
+				beforeX=beforeX/std::sqrt(beforeX.squared_length());
+				beforeY=beforeY/std::sqrt(beforeY.squared_length());
 			}else
 			{				
 				//project beforeX and beforeY to the plane at the node
@@ -271,14 +272,15 @@ int main(int argc, char *argv[])
 				//project tmpX and tmpY to the plane conformed of X and Y
 				beforeX=tmpX-(tmpX*N)*N;
 				beforeY=CGAL::cross_product(V,beforeX);
-
+				beforeX=beforeX/std::sqrt(beforeX.squared_length());
+				beforeY=beforeY/std::sqrt(beforeY.squared_length());
 			}
 			int DIV2=DIV;
 			if(itrC==_branch->end()-2)DIV2=DIV+1;
 			for(int ss=0;ss<DIV2;ss++)
 			{
 				double s=((double)ss)/((double)DIV);
-				//exterior.push_back(Point((*itrC).x()*(1-s)+(*(itrC+1)).x()*s,(*itrC).y()*(1-s)+(*(itrC+1)).y()*s,(*itrC).z()*(1-s)+(*(itrC+1)).z()*s));
+				exterior.push_back(Point((*itrC).x()*(1-s)+(*(itrC+1)).x()*s,(*itrC).y()*(1-s)+(*(itrC+1)).y()*s,(*itrC).z()*(1-s)+(*(itrC+1)).z()*s));
 				for(int i=0;i<RDIV;i++)
 				{
 					double theta=(double)(i)/RDIV*2.*pi;
@@ -303,13 +305,13 @@ int main(int argc, char *argv[])
 					{
 						Point DI(DI2.x()*s+DI1.x()*(1-s),DI2.y()*s+DI1.y()*(1-s),DI2.z()*s+DI1.z()*(1-s));
 						Point DE(DE2.x()*s+DE1.x()*(1-s),DE2.y()*s+DE1.y()*(1-s),DE2.z()*s+DE1.z()*(1-s));
-						//exterior.push_back(DI);
+						exterior.push_back(DI);
 						exterior.push_back(DE);
 					}else
 					{
 						Point DI(DI2.x()*s+DI1.x()*(1-s),DI2.y()*s+DI1.y()*(1-s),DI2.z()*s+DI1.z()*(1-s));
 						Point DE(DE2.x()*s+DE1.x()*(1-s),DE2.y()*s+DE1.y()*(1-s),DE2.z()*s+DE1.z()*(1-s));
-						//exterior.push_back(DI);
+						exterior.push_back(DI);
 						exterior.push_back(DE);
 					}
 				}
@@ -561,7 +563,8 @@ int main(int argc, char *argv[])
 				}
 				beforeX=CGAL::cross_product(V,Z);
 				beforeY=CGAL::cross_product(V,beforeX);
-
+				beforeX=beforeX/std::sqrt(beforeX.squared_length());
+				beforeY=beforeY/std::sqrt(beforeY.squared_length());
 			}else
 			{				
 				//project beforeX and beforeY to the plane at the node
@@ -583,7 +586,8 @@ int main(int argc, char *argv[])
 				//project tmpX and tmpY to the plane conformed of X and Y
 				beforeX=tmpX-(tmpX*N)*N;
 				beforeY=CGAL::cross_product(V,beforeX);
-
+				beforeX=beforeX/std::sqrt(beforeX.squared_length());
+				beforeY=beforeY/std::sqrt(beforeY.squared_length());
 			}
 			for(double ss=0.5;ss<DIV;ss++)
 			{
@@ -722,7 +726,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	std::cout<<endl;
-	std::cout<<cell_group.size()<<"group found"<<endl;
+	std::cout<<cell_group.size()<<"groups found"<<endl;
 	count=0;
 	for(auto itr=cell_group.begin();itr!=cell_group.end();itr++)
 	{
@@ -999,12 +1003,12 @@ int main(int argc, char *argv[])
 	//File write	
 	filename=NAME+".out";
 	string filename2=NAME+"_S.out";
-	//string filename3=NAME+"_F.out";
+	string filename3=NAME+"_F.out";
 	std::cout<<"start writing file"<<"["<<filename<<"]"<<endl;
 	ofstream ofs(filename);
 	ofstream ofs2(filename2);
-	//ofstream ofs3(filename3);
-	/*
+	ofstream ofs3(filename3);
+	
 	N=0;
 	NN=T.number_of_finite_cells()/20;
 	if(NN==0)NN=1;
@@ -1023,7 +1027,7 @@ int main(int argc, char *argv[])
 		}
 		if(((int)N/NN)*NN==N)std::cout<<"*";
 	}
-	std::cout<<endl;*/
+	std::cout<<endl;
 	N=0;
 	num=0;
 	NN=facet_list.size()/20;
@@ -1060,7 +1064,7 @@ int main(int argc, char *argv[])
 	std::cout<<endl;
 	ofs.close();
 	ofs2.close();
-	//ofs3.close();
+	ofs3.close();
 	ofs4.close();
 	
 	
