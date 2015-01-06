@@ -18,7 +18,7 @@ typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef CGAL::Delaunay_triangulation_3<K,CGAL::Fast_location> Delaunay;
 typedef Delaunay::Point Point;
 typedef CGAL::Vector_3<K> Vector;
-typedef std::vector<Point> br;
+typedef std::vector<Point> branch;
 typedef struct
 {
 	Vector majorRadius;
@@ -32,41 +32,34 @@ struct face
       return A == right.A&&B==right.B&&C==right.C ? true : false;
     }
 };
+
+typedef struct
+{
+	Vector a;
+}trapezoid;
 typedef std::vector<eclipse> eclipses;
-typedef boost::tuple<double,br*> R_br;
+typedef boost::tuple<double,branch*> Rad_branch;
 typedef Delaunay::Cell_handle Cell_handle;
 typedef Delaunay::Vertex_handle Vertex_handle;
 typedef Delaunay::Locate_type    Locate_type;
 using namespace std;
-int main(int argc, char *argv[])
+double PI=0.0;
+double read(string filename,std::vector<Rad_branch> &data)
 {
-	if(argc<2)return 0;
-	string argv1 = argv[1];
-    std::vector<string> leftright;
-	string filename=argv1;
-	
-	boost::algorithm::split(leftright , argv1, boost::algorithm::is_any_of("."));
-	string NAME=leftright[0];
+	branch* _branch;
+	string line;
+	double R;
+	int N;
 
-	double pi=boost::math::constants::pi<double>();
-	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
+	// read file
+	double minR=10000;
 
-	ifstream ifs(filename);
-
-
+	ifstream ifs(filename);  //input file
 	if(ifs.fail()){
 		std::cout<<"File does not exist."<<endl;
 		exit(0);
 	}
-	std::vector<R_br> data;
-	std::vector<eclipses*> eclipseTree;
-	br* branch;
-	string line;
-	unsigned N;
-	double R;
 
-	// read file
-	double minR=10000;
 	while(getline(ifs,line))
 	{
 		std::vector<string> words;
@@ -76,41 +69,40 @@ int main(int argc, char *argv[])
 		string prefix=string(_prefix);
 		if(prefix=="P")
 		{
-			branch=new br();
+			_branch=new branch();
 			sscanf(words[1].data(),"%d",&N);
 		}
 		if(prefix=="R")
 		{
 			sscanf(words[1].data(),"%lf",&R);
 			if(R<minR)minR=R;
-			data.push_back(boost::make_tuple(R,branch));
+			data.push_back(boost::make_tuple(R,_branch));
 		}
 		if(prefix=="C"){
 			double x,y,z;
 			sscanf(words[1].data(),"%lf",&x);
 			sscanf(words[2].data(),"%lf",&y);
 			sscanf(words[3].data(),"%lf",&z);
-			branch->push_back(Point(x,y,z));
+			_branch->push_back(Point(x,y,z));
 		}
 	}
-	//basic resolution
-	double baseRes=minR*2*pi/12.;
-
-	std::vector<Point> exterior;
-	std::list<std::pair<Point,double>> interior;
+	ifs.close();
+	return minR;
+}
+void generate_eclipseTree(std::vector<Rad_branch> &data,std::vector<eclipses*> &eclipseTree)
+{
 	int C=0;
 	int num=0;
-	
+
 	//Construct eclipses at each node	
-	for(vector<R_br>::iterator itr=data.begin();itr!=data.end();itr++,C++)
+	for(vector<Rad_branch>::iterator itr=data.begin();itr!=data.end();itr++,C++)
 	{
 		double Radius;
-		br* _branch;
+		branch* _branch;
 		boost::tie(Radius,_branch)=*itr;
-		//planes *_planes=new planes();
 		eclipses *_eclipses=new eclipses();
 		eclipseTree.push_back(_eclipses);
-		for(br::iterator anitr=_branch->begin();anitr!=_branch->end();anitr++)
+		for(branch::iterator anitr=_branch->begin();anitr!=_branch->end();anitr++)
 		{
 			eclipse newEclipse;
 			if(anitr==_branch->begin())
@@ -195,31 +187,33 @@ int main(int argc, char *argv[])
 			_eclipses->push_back(newEclipse);
 		}
 	}
-	vector<R_br>::iterator itrA=data.begin();
+}
+void generate_exterior(std::vector<Rad_branch> &data,std::vector<eclipses*> &eclipseTree,double baseRes,std::vector<Point> &exterior)
+{
+	vector<Rad_branch>::iterator itrA=data.begin();
 	vector<eclipses*>::iterator itrB=eclipseTree.begin();
 
-	std::cout<<"construct exterior"<<endl;
 
-    int NN=(data.size()/20);
+	int NN=(data.size()/20);
 	if(NN<1)NN=1;
-	N=0;
+	int N=0;
 	while(itrA!=data.end())
 	{
 		double Radius;
-		br* _branch;
+		branch* _branch;
 		eclipses* _eclipses=*itrB;
 		boost::tie(Radius,_branch)=*itrA;
-		br::iterator itrC=_branch->begin();
+		branch::iterator itrC=_branch->begin();
 		eclipses::iterator itrD=_eclipses->begin();
 		Vector beforeX(0,0,0);
 		Vector beforeY(0,0,0);
 		//Division number along diameter
 		int RDIV=12;
-		if(Radius*2.*pi/12.<baseRes)
+		if(Radius*2.*PI/12.<baseRes)
 		{
 			RDIV=12;
 		}else{
-			RDIV=(int)(Radius*2.*pi/baseRes);
+			RDIV=(int)(Radius*2.*PI/baseRes);
 		}
 		while(itrC!=_branch->end()-1)
 		{
@@ -283,7 +277,7 @@ int main(int argc, char *argv[])
 				exterior.push_back(Point((*itrC).x()*(1-s)+(*(itrC+1)).x()*s,(*itrC).y()*(1-s)+(*(itrC+1)).y()*s,(*itrC).z()*(1-s)+(*(itrC+1)).z()*s));
 				for(int i=0;i<RDIV;i++)
 				{
-					double theta=(double)(i)/RDIV*2.*pi;
+					double theta=(double)(i)/RDIV*2.*PI;
 
 					Vector BI=0.8*Radius*(beforeX*std::cos(theta)+beforeY*std::sin(theta));
 					Vector BE=1.05*Radius*(beforeX*std::cos(theta)+beforeY*std::sin(theta));
@@ -329,14 +323,9 @@ int main(int argc, char *argv[])
 		N++;
 	}
 	std::cout<<endl;
-	// building their Delaunay triangulation.
-	std::cout<<"start triangulation"<<endl;
-	
-	Delaunay T;
-	std::cout<<"exterior.size()"<<exterior.size()<<endl;
-	N=0;
-	NN=(exterior.size()/20);
-	if(NN<1)NN=1;
+}
+void triangulate(Delaunay &T,std::vector<Point> &exterior)
+{
 	for(int i=0;i<20;i++)
 	{
 		std::vector<Point>::iterator be=exterior.begin()+exterior.size()*i/20;
@@ -344,27 +333,19 @@ int main(int argc, char *argv[])
 		T.insert(be,en);
 		std::cout<<"*";
 	}
-	std::cout<<endl;
-	std::cout<<"end triangulation"<<endl;
-	std::cout<<"T.number_of_vertices:"<<T.number_of_vertices()<<endl;
-	std::cout<<"number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
-	std::map<Delaunay::Cell_handle,int> index;
 
-	int* cells=new int[T.number_of_finite_cells()];
-	std::cout<<"start cell search"<<endl;
-	std::cout<<"create index"<<endl;
-
-	N=0;
+}
+void asign_index_to_cells(std::map<Delaunay::Cell_handle,int> &index,Delaunay &T)
+{
+	int N=0;
 	for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++)
 	{
 		index.insert(pair<const Delaunay::Finite_cells_iterator,int>(itr,N));
 		N++;
 	}
-
-	
-	Cell_handle before;
-	Cell_handle c;
-	std::cout<<"initialize cells"<<endl;
+}
+void init_cells(Delaunay &T,int* cells)
+{
 	int S=T.number_of_finite_cells();
 	int* ptr1=cells;
 	for(int i=0;i<S;i++)
@@ -372,48 +353,63 @@ int main(int argc, char *argv[])
 		*ptr1=0;
 		ptr1++;
 	}
-	Locate_type lt;
-	int li, lj;
-	
-	std::cout<<"start cell locate"<<endl;
-	
+}
+typedef struct
+{
+	int numInterior;
+	int next;
+	int DIV;
+	Vector beforeX;
+	Vector beforeY;
+	Vector V;
+	Cell_handle before;
+	vector<Point> particles;
+	double s;
+	branch::iterator itrC;
+	eclipses::iterator itrD;
+	branch* branch;
+}info;
+int computeInterior(std::vector<Rad_branch> &data,std::vector<eclipses*> &eclipseTree,double baseRes,std::function<void(info&)>func)
+{
+	info myInfo;
+	myInfo.numInterior=0;
+	myInfo.next=1000000;
 
-	N=0;
-	itrA=data.begin();
-	itrB=eclipseTree.begin();
+	vector<Rad_branch>::iterator itrA=data.begin();
+	vector<eclipses*>::iterator itrB=eclipseTree.begin();
 	while(itrA!=data.end())
 	{
 		int YDIV=8;
 		double Radius;
-		br* _branch;
 		eclipses* _eclipses=*itrB;
-		boost::tie(Radius,_branch)=*itrA;
-		br::iterator itrC=_branch->begin();
-		eclipses::iterator itrD=_eclipses->begin();
-		Vector beforeX(0,0,0);
-		Vector beforeY(0,0,0);
+		boost::tie(Radius,myInfo.branch)=*itrA;  //decompose
+		myInfo.itrC=myInfo.branch->begin();
+		myInfo.itrD=_eclipses->begin();
+		myInfo.beforeX=Vector(0,0,0);
+		myInfo.beforeY=Vector(0,0,0);
 		//Division number along diameter
 		int RDIV=12;
-		if(Radius*2.*pi/12.<baseRes)
+		if(Radius*2.*PI/12.<baseRes)
 		{
 			RDIV=12;
 		}else{
-			RDIV=(int)(Radius*2.*pi/baseRes);
+			RDIV=(int)(Radius*2.*PI/baseRes);
 		}
 
 		//Generate base particles
 		vector<Vector> vectors;
-		vector<Point> particles;
-		double alpha=pi/((double)RDIV);
+		double alpha=PI/((double)RDIV);
 		double R2=Radius*std::cos(alpha);
 		for (double i=0.5;i<RDIV;i++)
 		{
-			double theta=2.*pi*((double)i)/((double)RDIV);
+			double theta=2.*PI*((double)i)/((double)RDIV);
 			Vector vector(R2*std::cos(theta),R2*std::sin(theta),0);
 			vectors.push_back(vector);
 		}
 		double edge=2*std::sin(alpha)*Radius;
 		double dx=edge/YDIV;
+		myInfo.particles.clear();
+
 		for(double i=-Radius;i<Radius;i+=dx)
 		{
 			for(double j=-Radius;j<Radius;j+=dx)
@@ -433,206 +429,198 @@ int main(int argc, char *argv[])
             
 				}
 				if(flag)
-					particles.push_back(Point(i,j,0));
+					myInfo.particles.push_back(Point(i,j,0));
 			}
 		}
+		
+		std::cout<<"particles.size()"<<myInfo.particles.size()<<endl;
+		std::cout<<"_branch.size()"<<myInfo.branch->size()<<endl;
 
-		while(itrC!=_branch->end()-1)
+		while(myInfo.itrC!=myInfo.branch->end()-1)
 		{
 			//Division number along line
-			Point P=*itrC;
-			Point Q=*(itrC+1);
-			Vector V=Q-P;
-			double Length=std::sqrt(V.squared_length());
-			V=V/Length;
-			int DIV=1;//default division number
+			Point P=*myInfo.itrC;
+			Point Q=*(myInfo.itrC+1);
+			myInfo.V=Q-P;
+			double Length=std::sqrt(myInfo.V.squared_length());
+			myInfo.V=myInfo.V/Length;
+			myInfo.DIV=1;//default division number
 			if(Length<baseRes)
 			{
-				DIV=1;
+				myInfo.DIV=1;
 			}else{
-				DIV=(int)(Length/baseRes)+1;
+				myInfo.DIV=(int)(Length/baseRes)+1;
 			}
-			DIV*=5;
+			myInfo.DIV*=5;
+			
+			func(myInfo);
 
-			for(double ss=0.5;ss<DIV;ss++)
-			{					
-				for(auto particle=particles.begin();particle!=particles.end();particle++)
-				{
-						N++;
-				}
-			}
-			itrC++;
-			itrD++;
+			myInfo.itrC++;
+			myInfo.itrD++;
 		}
 		itrA++;
 		itrB++;
 	}
-	std::cout<<"interior.size():"<<N<<endl;
+	return myInfo.numInterior;
+}
+int main(int argc, char *argv[])
+{
+	if(argc<2)return 0;
+	string filename=argv[1];   //input filename
+    std::vector<string> left_right;
 	
-	string filename4=NAME+"_D.out";
-	ofstream ofs4(filename4);
+	boost::algorithm::split(left_right , filename, boost::algorithm::is_any_of("."));
+	string NAME=left_right[0];
+
+	PI=boost::math::constants::pi<double>();
+	std::cout<<"start reading file"<<"["<<filename<<"]"<<endl;
+
+
+	//File write	
+	string filename1=NAME+".out";    //vertices
+	string filename2=NAME+"_S.out";  //indices of coner viertices of triangles
+	string filename3=NAME+"_F.out";  //tets
+	//string filename4=NAME+"_D.out";  //interior points
+	ofstream ofs(filename1);
+	ofstream ofs2(filename2);
+	ofstream ofs3(filename3);
+	//ofstream ofs4(filename4);	
+
+	std::vector<Rad_branch> data;
+	double minR=read(filename,data);  //minimum	
+	double baseRes=minR*2*PI/12.; 	  //basic resolution
+
+	std::vector<Point> exterior;
+	std::vector<eclipses*> eclipseTree;
+	generate_eclipseTree(data,eclipseTree);
+
+	std::cout<<"construct exterior"<<endl;
+	generate_exterior(data,eclipseTree,baseRes,exterior);
+	std::cout<<"exterior.size()"<<exterior.size()<<endl;
+
 	
-	int size=N;
-	int next=1000000;
-	N=0;
-	itrA=data.begin();
-	itrB=eclipseTree.begin();
-	while(itrA!=data.end())
-	{
-		int YDIV=8;
-		double Radius;
-		br* _branch;
-		eclipses* _eclipses=*itrB;
-		boost::tie(Radius,_branch)=*itrA;
-		br::iterator itrC=_branch->begin();
-		eclipses::iterator itrD=_eclipses->begin();
-		Vector beforeX(0,0,0);
-		Vector beforeY(0,0,0);
-		//Division number along diameter
-		int RDIV=12;
-		if(Radius*2.*pi/12.<baseRes)
-		{
-			RDIV=12;
-		}else{
-			RDIV=(int)(Radius*2.*pi/baseRes);
-		}
+	// building their Delaunay triangulation.
+	std::cout<<"start triangulation"<<endl;
+	Delaunay T;
+	triangulate(T,exterior);
+	std::cout<<"end triangulation"<<endl;
+	std::cout<<"T.number_of_vertices:"<<T.number_of_vertices()<<endl;
+	std::cout<<"number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
+	std::map<Delaunay::Cell_handle,int> index;
+	std::cout<<"create index"<<endl;
+	asign_index_to_cells(index,T);
+	std::cout<<"start cell search"<<endl;
 
-		//Generate base particles
-		vector<Vector> vectors;
-		vector<Point> particles;
+	
 
-		double alpha=pi/((double)RDIV);
-		double R2=Radius*std::cos(alpha);
-		for (double i=0.5;i<RDIV;i++)
-		{
-			double theta=2.*pi*((double)i)/((double)RDIV);
-			Vector vector(R2*std::cos(theta),R2*std::sin(theta),0);
-			vectors.push_back(vector);
-		}
-		double edge=2*std::sin(alpha)*Radius;
-		double dx=edge/YDIV;
-		for(double i=-Radius;i<Radius;i+=dx)
-		{
-			for(double j=-Radius;j<Radius;j+=dx)
+	int* cells=new int[T.number_of_finite_cells()];
+	
+	std::cout<<"initialize cells"<<endl;
+	init_cells(T,cells);
+
+	
+	
+	//compute total number of interior points
+	int size=computeInterior(data,eclipseTree,baseRes,[](info& myInfo){
+		for(double ss=0.5;ss<myInfo.DIV;ss++)
 			{
-				Vector V(i,j,0);
-				bool flag=true;
-				for(auto T=vectors.begin();T!=vectors.end();T++)
+				for(auto particle=myInfo.particles.begin();particle!=myInfo.particles.end();particle++)
 				{
-					if ((*T)*V<R2*R2)
-					{
-						continue;
-					}else
-					{
-						flag=false;
-						break;
-					}
-            
+					myInfo.numInterior++;
 				}
-				if(flag)
-					particles.push_back(Point(i,j,0));
 			}
-		}
+});
+	std::cout<<"interior.size():"<< size<<endl;
 
-		while(itrC!=_branch->end()-1)
-		{
-			//Division number along line
-			Point P=*itrC;
-			Point Q=*(itrC+1);
-			Vector V=Q-P;
-			double Length=std::sqrt(V.squared_length());
-			V=V/Length;
-			int DIV=1;//default division number
-			if(Length<baseRes)
-			{
-				DIV=1;
-			}else{
-				DIV=(int)(Length/baseRes)+1;
-			}
-			DIV*=5;
-			//if in the first run, before is igonored
-			//from the second run, before is used
+	computeInterior(data,eclipseTree,baseRes,[&size,&cells,&index,&T](info& myInfo){
 
-			if(itrC==_branch->begin())
+			Cell_handle c;
+					
+			if(myInfo.itrC==myInfo.branch->begin())
 			{
 				Vector Z(0,0,1);
-				double t=V*Z;
+				double t=myInfo.V*Z;
 				if(std::fabs(t)>0.9)
 				{
 					Z=Vector(0,1,0);
 				}
-				beforeX=CGAL::cross_product(V,Z);
-				beforeY=CGAL::cross_product(V,beforeX);
-				beforeX=beforeX/std::sqrt(beforeX.squared_length());
-				beforeY=beforeY/std::sqrt(beforeY.squared_length());
+				myInfo.beforeX=CGAL::cross_product(myInfo.V,Z);
+				myInfo.beforeY=CGAL::cross_product(myInfo.V,myInfo.beforeX);
+				myInfo.beforeX=myInfo.beforeX/std::sqrt(myInfo.beforeX.squared_length());
+				myInfo.beforeY=myInfo.beforeY/std::sqrt(myInfo.beforeY.squared_length());
 			}else
 			{				
 				//project beforeX and beforeY to the plane at the node
-				double cx=-(beforeX*itrD->Normal)/(V*itrD->Normal);
-				double cy=-(beforeY*itrD->Normal)/(V*itrD->Normal);
-				Vector tmpX=beforeX+cx*V;
-				Vector tmpY=beforeY+cy*V;
+				double cx=-(myInfo.beforeX*myInfo.itrD->Normal)/(myInfo.V*myInfo.itrD->Normal);
+				double cy=-(myInfo.beforeY*myInfo.itrD->Normal)/(myInfo.V*myInfo.itrD->Normal);
+				Vector tmpX=myInfo.beforeX+cx*myInfo.V;
+				Vector tmpY=myInfo.beforeY+cy*myInfo.V;
 
 				//Compute plane	
 				Vector Z(0,0,1);
-				double t=V*Z;
+				double t=myInfo.V*Z;
 				if(std::fabs(t)>0.9)
 				{
 					Z=Vector(0,1,0);
 				}
-				Vector X=CGAL::cross_product(V,Z);
-				Vector Y=CGAL::cross_product(V,beforeX);
+				Vector X=CGAL::cross_product(myInfo.V,Z);
+				Vector Y=CGAL::cross_product(myInfo.V,myInfo.beforeX);
 				Vector N=CGAL::cross_product(X,Y);
 				//project tmpX and tmpY to the plane conformed of X and Y
-				beforeX=tmpX-(tmpX*N)*N;
-				beforeY=CGAL::cross_product(V,beforeX);
-				beforeX=beforeX/std::sqrt(beforeX.squared_length());
-				beforeY=beforeY/std::sqrt(beforeY.squared_length());
+				myInfo.beforeX=tmpX-(tmpX*N)*N;
+				myInfo.beforeY=CGAL::cross_product(myInfo.V,myInfo.beforeX);
+				myInfo.beforeX=myInfo.beforeX/std::sqrt(myInfo.beforeX.squared_length());
+				myInfo.beforeY=myInfo.beforeY/std::sqrt(myInfo.beforeY.squared_length());
 			}
-			for(double ss=0.5;ss<DIV;ss++)
-			{
-				double s=((double)ss)/((double)DIV);
-				for(auto particle=particles.begin();particle!=particles.end();particle++)
-				{
 
-					Vector B=beforeX*(*particle).x()+beforeY*(*particle).y();
+			for(double ss=0.5;ss<myInfo.DIV;ss++)
+			{
+				double s=((double)ss)/((double)myInfo.DIV);
+				for(auto particle=myInfo.particles.begin();particle!=myInfo.particles.end();particle++)
+				{
+					Vector B=myInfo.beforeX*(*particle).x()+myInfo.beforeY*(*particle).y();
+					int li, lj;
+					Locate_type lt;
 
 					//Project N
-					double c1=-(B*itrD->Normal)/(V*itrD->Normal);
-					double c2=-(B*(itrD+1)->Normal)/(V*(itrD+1)->Normal);
-					Vector tmp1=B+c1*V;
-					Vector tmp2=B+c2*V;
-					Point D1=(*itrC)+tmp1;
-					Point D2=(*(itrC+1))+tmp2;
+					double c1=-(B*myInfo.itrD->Normal)/(myInfo.V*myInfo.itrD->Normal);
+					double c2=-(B*(myInfo.itrD+1)->Normal)/(myInfo.V*(myInfo.itrD+1)->Normal);
+					Vector tmp1=B+c1*myInfo.V;
+					Vector tmp2=B+c2*myInfo.V;
+					Point D1=(*myInfo.itrC)+tmp1;
+					Point D2=(*(myInfo.itrC+1))+tmp2;
 					Point D(D2.x()*s+D1.x()*(1-s),D2.y()*s+D1.y()*(1-s),D2.z()*s+D1.z()*(1-s));
-					if(N==0)
+					if(myInfo.numInterior==0)
 						c = T.locate(D, lt,li,lj);
 					else
-						c=T.locate(D,lt,li,lj,before);
-					if(N<150000)ofs4<<(D).x()<<" , "<<(D).y()<<" , "<<(D).z()<<endl;
-
+						c=T.locate(D,lt,li,lj,myInfo.before);
+					
+					
 					if(lt==Locate_type::CELL)
 					{
 							std::map<Delaunay::Cell_handle,int>::iterator it_c=index.find(c);
 							int d=it_c->second;
 							cells[d]++;
-							before=c;
+							myInfo.before=c;
 					}
-					if(N>=next)
+					
+					if( myInfo.numInterior>=myInfo.next)
 					{
-						std::cout<<N<<"/"<<size<<endl;
-						next+=1000000;
+						std::cout<< myInfo.numInterior<<"/"<<size<<endl;
+						myInfo.next+=1000000;
 					}
-					N++;
+
+					myInfo.numInterior++;
 				}
 			}
+	
+	});
 
-			itrC++;
-			itrD++;
-		}
-		itrA++;
-		itrB++;
-	}
+	std::cout<<"interior.size():"<< size<<endl;
+
+	std::cout<<"start cell locate"<<endl;	
+	int N=0;
+
 	std::cout<<endl;
 	
 	std::cout<<"T.number_of_finite_cells:"<<T.number_of_finite_cells()<<endl;
@@ -668,7 +656,7 @@ int main(int argc, char *argv[])
 			N++;
 		}
 	}
-	NN=totalCount/20;
+	int NN=totalCount/20;
 	if(NN=0)NN=1;
 	cells2.push_back(_cells.begin()->first);
 	_cells.erase(_cells.begin()->first);
@@ -920,7 +908,7 @@ int main(int argc, char *argv[])
 	int TT=0;
 	while(true)
 	{
-		num=0;
+		int num=0;
 		N=0;
 		for(Delaunay::Finite_cells_iterator itr=T.finite_cells_begin();itr!=T.finite_cells_end();itr++,N++)
 		{
@@ -999,15 +987,7 @@ int main(int argc, char *argv[])
 	
 	std::cout<<endl;
 	std::cout<<"T.number_of_finite_facets:"<<T.number_of_finite_facets()<<endl;
-	
-	//File write	
-	filename=NAME+".out";
-	string filename2=NAME+"_S.out";
-	string filename3=NAME+"_F.out";
-	std::cout<<"start writing file"<<"["<<filename<<"]"<<endl;
-	ofstream ofs(filename);
-	ofstream ofs2(filename2);
-	ofstream ofs3(filename3);
+	std::cout<<"start writing file"<<"["<<filename1<<"]"<<endl;
 	
 	N=0;
 	NN=T.number_of_finite_cells()/20;
@@ -1029,7 +1009,7 @@ int main(int argc, char *argv[])
 	}
 	std::cout<<endl;
 	N=0;
-	num=0;
+	int num=0;
 	NN=facet_list.size()/20;
 	if(NN==0)NN=1;
 
@@ -1065,17 +1045,17 @@ int main(int argc, char *argv[])
 	ofs.close();
 	ofs2.close();
 	ofs3.close();
-	ofs4.close();
+	//ofs4.close();
 	
 	
 	std::cout << "Press Return To Exit...";
 	std::cin.get();
 
 	//release memory
-	for(vector<R_br>::iterator itr=data.begin();itr!=data.end();itr++)
+	for(vector<Rad_branch>::iterator itr=data.begin();itr!=data.end();itr++)
 	{
-		R_br a=*itr;
-		const br* _branch=boost::get<1>(a);
+		Rad_branch a=*itr;
+		const branch* _branch=boost::get<1>(a);
 		delete(_branch);
 	}
 	for(vector<eclipses*>::iterator itr=eclipseTree.begin();itr!=eclipseTree.end();itr++)
